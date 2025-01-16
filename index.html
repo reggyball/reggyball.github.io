@@ -3,34 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GPS Location Sender</title>
-  <script>
+  <title>Cat Found</title>
+<script>
     window.onload = function() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
-          
-          // Send data to Google Apps Script
-          sendDataToGoogleAppsScript(latitude, longitude);
-        }, function(error) {
-          console.error('Error getting GPS coordinates:', error);
-        });
-      } else {
-        alert('Geolocation is not supported by this browser.');
-      }
-    };
-
-    function sendDataToGoogleAppsScript(lat, long) {
-        // Get the query string from the URL
         const queryString = window.location.search;
-
-        // Parse the query string
         const urlParams = new URLSearchParams(queryString);
-
-        // Get the value of the 'n' parameter
         const name = urlParams.get('n');
 
+        const canvaPages = {
+            sunny: "https://www.canva.com/design/DAGcXLJzvfE/J319vNxzEVrT7I2SofO0vg/view?embed",
+            appa: "https://www.canva.com/design/DAGcXJYoCz8/T42mZ5G7tCFAsSlEPDjWAA/view?embed",
+            theo: "https://www.canva.com/design/DAGcXc_Xsvc/6UiZZK_f9HsjvnTcy1ypVA/view?embed",
+            default: ""
+        };
+
+        if(!Object.keys(canvaPages).includes(name)){
+            return;
+        }
+
+        const iframe = document.getElementById('canvaPage');
+        iframe.src = canvaPages[name];
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            // Send data to Google Apps Script
+            sendDataToGoogleAppsScript(latitude, longitude, name);
+            }, function(error) {
+            console.error('Error getting GPS coordinates:', error);
+            });
+        } else {
+            alert('Geolocation is not supported by this browser.');
+        }
+    };
+
+    function sendDataToGoogleAppsScript(lat, long, name) {
       const url = "https://script.google.com/macros/s/AKfycbzxHxkr3cNRCxHEWRlNVjT3ZXIb1-au0WPz3lsm7CLdlHnf7VHnNXXI9Sd1gEVuo8mt/exec"; // Replace with your Apps Script URL
       
       const params = new URLSearchParams(
@@ -64,6 +73,12 @@
   </script>
 </head>
 <body>
-  <h1>GPS Location Sender</h1>
+    <div style="position: relative; width: 100%; height: 0; padding-top: 56.2225%;
+    padding-bottom: 0; box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); margin-top: 1.6em; margin-bottom: 0.9em; overflow: hidden;
+    border-radius: 8px; will-change: transform;">
+     <iframe id="canvaPage"  loading="lazy" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; padding: 0;margin: 0;"
+       src="" allowfullscreen="allowfullscreen" allow="fullscreen">
+     </iframe>
+   </div>
 </body>
 </html>
