@@ -21,7 +21,7 @@
       }
     };
 
-    function sendDataToGoogleAppsScript(latitude, longitude) {
+    function sendDataToGoogleAppsScript(lat, long) {
         // Get the query string from the URL
         const queryString = window.location.search;
 
@@ -29,20 +29,37 @@
         const urlParams = new URLSearchParams(queryString);
 
         // Get the value of the 'n' parameter
-        const nValue = urlParams.get('n');
+        const name = urlParams.get('n');
 
       const url = "https://script.google.com/macros/s/AKfycbzxHxkr3cNRCxHEWRlNVjT3ZXIb1-au0WPz3lsm7CLdlHnf7VHnNXXI9Sd1gEVuo8mt/exec"; // Replace with your Apps Script URL
-      const params = new URLSearchParams();
-      params.append('latitude', latitude);
-      params.append('longitude', longitude);
-      params.append('name', nValue);
+      
+      const params = new URLSearchParams(
+        {
+            lat, long, name
+        }
+      );
+
+      console.log(lat, long, name);
 
       fetch(url, {
         method: 'POST',
-        body: params
+        body: params,
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
       })
-      .then(response => response.text())
-      .then(data => console.log('Data sent to Google Apps Script:', data))
+        .then(response => {
+            console.log(response);
+            console.log(response.text());
+            if (!response.ok) {
+            throw new Error('Network response was not ok');
+            }
+            return response.json();  // Parse the response as JSON
+        })
+        .then(data => {
+            console.log('Response from server:', data);  // Log the response object
+        })
       .catch(error => console.error('Error sending data to Google Apps Script:', error));
     }
   </script>
