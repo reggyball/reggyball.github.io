@@ -3,9 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Reset body and html margins */
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+    }
+
+    body {
+      overflow: auto !important;
+      background: rgb(220, 239, 238);
+      text-align: center;
+    }
+
+    /* Fullscreen iframe styling */
+    iframe {
+      border: none;
+      width: 100%;
+      aspect-ratio: 8.647 / 11;
+      position: relative;
+      overflow: scroll;
+      max-width: 760px;
+    }
+</style>
   <title>Cat Found</title>
 <script>
-    window.onload = function() {
+    window.onload = async function() {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         const name = urlParams.get('n');
@@ -17,31 +41,61 @@
             default: ""
         };
 
+        const urls = {
+          send: "https://script.google.com/macros/s/AKfycbzxHxkr3cNRCxHEWRlNVjT3ZXIb1-au0WPz3lsm7CLdlHnf7VHnNXXI9Sd1gEVuo8mt/exec",
+          sheets: "https://script.google.com/macros/s/AKfycbwwrsafg3jj-VL3BS69L8qgKH1FcYD7sbS9rihur9By_WB3gR2N9IARQjibA-u9PHQ/exec"
+        }
+
         if(!Object.keys(canvaPages).includes(name)){
             return;
         }
 
         const iframe = document.getElementById('canvaPage');
+
+      // Set the src of the iframe
         iframe.src = canvaPages[name];
 
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            
-            // Send data to Google Apps Script
-            sendDataToGoogleAppsScript(latitude, longitude, name);
-            }, function(error) {
-            console.error('Error getting GPS coordinates:', error);
-            });
+          await tryGeolocation(name, sendDataToGoogleAppsScript(urls.send), 0, 0);
+          await tryGeolocation(name, sendDataToGoogleAppsScript(urls.sheets), -1);
         } else {
-            alert('Geolocation is not supported by this browser.');
+          alert('Geolocation is not supported by this browser.');
         }
     };
 
-    function sendDataToGoogleAppsScript(lat, long, name) {
-      const url = "https://script.google.com/macros/s/AKfycbzxHxkr3cNRCxHEWRlNVjT3ZXIb1-au0WPz3lsm7CLdlHnf7VHnNXXI9Sd1gEVuo8mt/exec"; // Replace with your Apps Script URL
-      
+    async function tryGeolocation(name, runFunc, {retryCount = 0, maxRetries = 100, poll = false}) {
+        await navigator.geolocation.getCurrentPosition(
+            async function (position) {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                lat = latitude;
+                long = longitude;
+                // Send data to Google Apps Script
+                await runFunc(latitude, longitude, name);
+
+                if(poll){
+                  console.log('here!')
+                  setTimeout(() => tryGeolocation(name, runFunc, {retryCount, maxRetries, poll}), 10000);
+                }
+            },
+            async function (error) {
+                console.error('Error getting GPS coordinates:', error);
+                await runFunc(-1, -1, name);
+
+                if (error.code === 1) { // PERMISSION_DENIED
+                    console.warn("User denied GPS access.");
+                }
+
+                if (retryCount < maxRetries) {
+                    console.log(`Retrying geolocation... (${retryCount + 1}/${maxRetries})`);
+                    setTimeout(() => tryGeolocation(name, runFunc, {retryCount: retryCount + 1, maxRetries, poll}), 3000);
+                    
+                }
+            }
+        );
+    }
+
+    const sendDataToGoogleAppsScript = (url) => async (lat, long, name) => {
       const params = new URLSearchParams(
         {
             lat, long, name
@@ -50,7 +104,7 @@
 
       console.log(lat, long, name);
 
-      fetch(url, {
+      await fetch(url, {
         method: 'POST',
         body: params,
         mode: 'no-cors',
@@ -73,7 +127,7 @@
   </script>
 </head>
 <body style="margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;">
-  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; margin: 0; padding: 0;">
+  <!-- <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; margin: 0; padding: 0;">
       <iframe id="canvaPage" 
           loading="lazy" 
           style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; margin: 0; padding: 0;"
@@ -81,6 +135,13 @@
           allowfullscreen="allowfullscreen" 
           allow="fullscreen">
       </iframe>
-  </div>
+  </div> -->
+
+  <iframe id="canvaPage" 
+          loading="lazy" 
+          src="" 
+          allowfullscreen="allowfullscreen" 
+          allow="fullscreen">
+      </iframe>
 </body>
 </html>
